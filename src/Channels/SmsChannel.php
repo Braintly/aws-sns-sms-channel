@@ -15,9 +15,17 @@ class SmsChannel
      */
     protected $sns;
 
-    public function __construct(SnsClient $sns)
+    /**
+     * Whether or not to check if phone number is opted out
+     *
+     * @var bool
+     */
+    protected $checkOptedOut;
+
+    public function __construct(SnsClient $sns, array $options)
     {
         $this->sns = $sns;
+        $this->checkOptedOut = $options['checkOptedOut'] ?? true;
     }
 
     /**
@@ -34,12 +42,14 @@ class SmsChannel
             return;
         }
 
-        if (!$result = $this->sns->checkIfPhoneNumberIsOptedOut(['phoneNumber' => $to])) {
-            return;
-        }
+        if($this->checkOptedOut){
+            if (!$result = $this->sns->checkIfPhoneNumberIsOptedOut(['phoneNumber' => $to])) {
+                return;
+            }
 
-        if ($result['isOptedOut']) {
-            return;
+            if ($result['isOptedOut']) {
+                return;
+            }
         }
 
         $message = $notification->toSms($notifiable);
